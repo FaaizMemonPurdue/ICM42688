@@ -252,6 +252,7 @@ int ICM42688_FIFO::enableFifo(bool accel,bool gyro,bool temp) { //you have to ha
   _enFifoGyro = gyro;
   _enFifoTemp = temp;
   _fifoFrameSize = 1 + accel*6 + gyro*6 + temp; //bad!!
+  writeRegister(ICM42688reg::UB0_REG_FIFO_CONFIG, 1 << 6);
   return 1;
 }
 

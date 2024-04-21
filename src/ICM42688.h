@@ -281,15 +281,15 @@ class ICM42688_FIFO: public ICM42688 {
     bool _enFifoTemp = false;
     size_t _fifoSize = 0;
     size_t _fifoFrameSize = 0;
-    float _axFifo[85] = {};
-    float _ayFifo[85] = {};
-    float _azFifo[85] = {};
+    float _axFifo[1000] = {};
+    float _ayFifo[1000] = {};
+    float _azFifo[1000] = {};
     size_t _aSize = 0;
-    float _gxFifo[85] = {};
-    float _gyFifo[85] = {};
-    float _gzFifo[85] = {};
+    float _gxFifo[1000] = {};
+    float _gyFifo[1000] = {};
+    float _gzFifo[1000] = {};
     size_t _gSize = 0;
-    float _tFifo[256] = {};
+    float _tFifo[1000] = {};
     size_t _tSize = 0;
 };
 
