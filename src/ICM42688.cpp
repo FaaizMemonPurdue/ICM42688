@@ -46,15 +46,16 @@ int ICM42688::begin() {
   }
 
   // turn on accel and gyro in Low Noise (LN) Mode
-  if(writeRegister(UB0_REG_PWR_MGMT0, 0x0F) < 0) { //correct reg
-    return -4; //has built in delay, no worries about issuing next regwrite too fast
+  if(writeRegister(UB0_REG_PWR_MGMT0, 0x0F) < 0) {
+    return -4;
   }
+
   // 16G is default -- do this to set up accel resolution scaling
-  int ret = setAccelFS(gpm16); //seemed fine
+  int ret = setAccelFS(gpm16);
   if (ret < 0) return ret;
 
   // 2000DPS is default -- do this to set up gyro resolution scaling
-  ret = setGyroFS(dps2000); //seemed fine
+  ret = setGyroFS(dps2000);
   if (ret < 0) return ret;
 
   // // disable inner filters (Notch filter, Anti-alias filter, UI filter block)
@@ -63,7 +64,7 @@ int ICM42688::begin() {
   // }
 
   // estimate gyro bias
-  if (calibrateGyro() < 0) { 
+  if (calibrateGyro() < 0) {
     return -8;
   }
   // successful init, return 1
@@ -79,21 +80,21 @@ int ICM42688::setAccelFS(AccelFS fssel) {
 
   // read current register value
   uint8_t reg;
-  if (readRegisters(UB0_REG_ACCEL_CONFIG0, 1, &reg) < 0) return -1; //correct reg
+  if (readRegisters(UB0_REG_ACCEL_CONFIG0, 1, &reg) < 0) return -1;
 
   // only change FS_SEL in reg
-  reg = (fssel << 5) | (reg & 0x1F); //seems right
+  reg = (fssel << 5) | (reg & 0x1F);
 
-  if (writeRegister(UB0_REG_ACCEL_CONFIG0, reg) < 0) return -2; 
+  if (writeRegister(UB0_REG_ACCEL_CONFIG0, reg) < 0) return -2;
 
-  _accelScale = static_cast<float>(1 << (4 - fssel)) / 32768.0f; //looks right
+  _accelScale = static_cast<float>(1 << (4 - fssel)) / 32768.0f;
   _accelFS = fssel;
 
   return 1;
 }
 
 /* sets the gyro full scale range to values other than default */
-int ICM42688::setGyroFS(GyroFS fssel) { //looks good
+int ICM42688::setGyroFS(GyroFS fssel) {
   // use low speed SPI for register setting
   _useSPIHS = false;
 
@@ -104,11 +105,11 @@ int ICM42688::setGyroFS(GyroFS fssel) { //looks good
   if (readRegisters(UB0_REG_GYRO_CONFIG0, 1, &reg) < 0) return -1;
 
   // only change FS_SEL in reg
-  reg = (fssel << 5) | (reg & 0x1F); 
+  reg = (fssel << 5) | (reg & 0x1F);
 
   if (writeRegister(UB0_REG_GYRO_CONFIG0, reg) < 0) return -2;
 
-  _gyroScale = (2000.0f / static_cast<float>(1 << fssel)) / 32768.0f; //looks right
+  _gyroScale = (2000.0f / static_cast<float>(1 << fssel)) / 32768.0f;
   _gyroFS = fssel;
 
   return 1;
@@ -244,14 +245,13 @@ int ICM42688::getAGT() {
 int ICM42688_FIFO::enableFifo(bool accel,bool gyro,bool temp) {
   // use low speed SPI for register setting
   _useSPIHS = false;
-  if(writeRegister(FIFO_EN,(accel*FIFO_ACCEL)|(gyro*FIFO_GYRO)|(temp*FIFO_TEMP_EN)) < 0) { 
-    //after fixing FIFO_EN -> 0x5F, looks right
+  if(writeRegister(FIFO_EN,(accel*FIFO_ACCEL)|(gyro*FIFO_GYRO)|(temp*FIFO_TEMP_EN)) < 0) {
     return -2;
   }
   _enFifoAccel = accel;
   _enFifoGyro = gyro;
   _enFifoTemp = temp;
-  _fifoFrameSize = 1 + accel*6 + gyro*6 + temp; //bad!!
+  _fifoFrameSize = accel*6 + gyro*6 + temp*2;
   return 1;
 }
 
@@ -266,7 +266,7 @@ int ICM42688_FIFO::readFifo() {
   // read and parse the buffer
   for (size_t i=0; i < _fifoSize/_fifoFrameSize; i++) {
     // grab the data from the ICM42688
-    if (readRegisters(UB0_REG_FIFO_DATA, _fifoFrameSize, _buffer) < 0) { //even worse!!
+    if (readRegisters(UB0_REG_FIFO_DATA, _fifoFrameSize, _buffer) < 0) {
       return -1;
     }
     if (_enFifoAccel) {
