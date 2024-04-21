@@ -241,7 +241,7 @@ int ICM42688::getAGT() {
 }
 
 /* configures and enables the FIFO buffer  */
-int ICM42688_FIFO::enableFifo(bool accel,bool gyro,bool temp) {
+int ICM42688_FIFO::enableFifo(bool accel,bool gyro,bool temp) { //you have to have temp on
   // use low speed SPI for register setting
   _useSPIHS = false;
   if(writeRegister(FIFO_EN,(accel*FIFO_ACCEL)|(gyro*FIFO_GYRO)|(temp*FIFO_TEMP_EN)) < 0) { 
@@ -262,7 +262,7 @@ int ICM42688_FIFO::readFifo() {
   Serial.print("_fifoFrameSize: ");
   Serial.println(_fifoFrameSize);
   readRegisters(UB0_REG_FIFO_COUNTH, 2, _buffer); //this _buffer is 15B, too small for most FIFO
-  _fifoSize = (((uint16_t) (_buffer[0]&0x0F)) <<8) + (((uint16_t) _buffer[1])); //idk about the 0F instead of FF
+  _fifoSize = (((uint16_t) (_buffer[0]&0xFF)) <<8) + (((uint16_t) _buffer[1])); //idk about the 0F instead of FF
 
   // read and parse the buffer
   for (size_t i=0; i < _fifoSize/_fifoFrameSize; i++) {
@@ -275,9 +275,9 @@ int ICM42688_FIFO::readFifo() {
     if (_enFifoAccel) {
       // combine into 16 bit values
       int16_t rawMeas[3];
-      rawMeas[0] = (((int16_t)_buffer[1]) << 8) | _buffer[2]; //check this order
-      rawMeas[1] = (((int16_t)_buffer[3]) << 8) | _buffer[4];
-      rawMeas[2] = (((int16_t)_buffer[5]) << 8) | _buffer[6];
+      rawMeas[0] = (((int16_t)_buffer[1 + 0]) << 8) | _buffer[1 + 1]; //check this order
+      rawMeas[1] = (((int16_t)_buffer[1 + 2]) << 8) | _buffer[1 + 3];
+      rawMeas[2] = (((int16_t)_buffer[1 + 4]) << 8) | _buffer[1 + 5];
       // transform and convert to float values
       _axFifo[i] = ((rawMeas[0] * _accelScale) - _accB[0]) * _accS[0];
       _ayFifo[i] = ((rawMeas[1] * _accelScale) - _accB[1]) * _accS[1];
@@ -286,7 +286,7 @@ int ICM42688_FIFO::readFifo() {
     }
     if (_enFifoTemp) {
       // combine into 16 bit values
-      int16_t rawMeas = (((int16_t)_buffer[0 + _enFifoAccel*6 + 1]) << 8) | _buffer[1 + _enFifoAccel*6 + 1];
+      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoAccel*6])); //this is normally a 1 byte value
       // transform and convert to float values
       _tFifo[i] = (static_cast<float>(rawMeas) / TEMP_DATA_REG_SCALE) + TEMP_OFFSET;
       _tSize = _fifoSize/_fifoFrameSize;
