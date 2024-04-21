@@ -20,14 +20,14 @@ class ICM42688
       dps15_625 = 0x07
     };
 
-    enum AccelFS : uint8_t {
+    enum AccelFS : uint8_t { //good
       gpm16 = 0x00,
       gpm8 = 0x01,
       gpm4 = 0x02,
       gpm2 = 0x03
     };
 
-    enum ODR : uint8_t {
+    enum ODR : uint8_t { //ln's cool at least
       odr32k = 0x01, // LN mode only
       odr16k = 0x02, // LN mode only
       odr8k = 0x03, // LN mode only
@@ -173,7 +173,7 @@ class ICM42688
     void setAccelCalX(float bias,float scaleFactor);
     void setAccelCalY(float bias,float scaleFactor);
     void setAccelCalZ(float bias,float scaleFactor);
-  // protected:
+  protected:
     ///\brief I2C Communication
     uint8_t _address = 0;
     TwoWire *_i2c = {};
@@ -225,7 +225,7 @@ class ICM42688
 
     uint8_t _bank = 0; ///< current user bank
 
-    const uint8_t FIFO_EN = 0x23;
+    const uint8_t FIFO_EN = 0x5F;
     const uint8_t FIFO_TEMP_EN = 0x04;
     const uint8_t FIFO_GYRO = 0x02;
     const uint8_t FIFO_ACCEL = 0x01;
