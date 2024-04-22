@@ -189,7 +189,7 @@ class ICM42688
     uint32_t SPI_HS_CLOCK = 8000000; // 8 MHz
 
     // buffer for reading from sensor
-    uint8_t _buffer[15] = {};
+    uint8_t _buffer[21] = {};
 
     // data buffer
     float _t = 0.0f;
@@ -291,6 +291,8 @@ class ICM42688_FIFO: public ICM42688 {
     size_t _gSize = 0;
     float _tFifo[1000] = {};
     size_t _tSize = 0;
+    float _timeFifo[1000] = {}; //all these thousands gonna be too big, limit elsewise
+    size_t _timeSize = 0;
 };
 
 #endif // ICM42688_H

@@ -285,25 +285,30 @@ int ICM42688_FIFO::readFifo() {
       _azFifo[i] = ((rawMeas[2] * _accelScale) - _accB[2]) * _accS[2];
       _aSize = _fifoSize / _fifoFrameSize;
     }
-    if (_enFifoTemp) {
-      // combine into 16 bit values
-      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoAccel*6])); //this is normally a 1 byte value
-      // transform and convert to float values
-      _tFifo[i] = (static_cast<float>(rawMeas) / TEMP_DATA_REG_SCALE) + TEMP_OFFSET;
-      _tSize = _fifoSize/_fifoFrameSize;
-    }
     if (_enFifoGyro) {
       // combine into 16 bit values
       int16_t rawMeas[3];
-      rawMeas[0] = (((int16_t)_buffer[0 + _enFifoAccel*6 + _enFifoTemp*2]) << 8) | _buffer[1 + _enFifoAccel*6 + _enFifoTemp*2];
-      rawMeas[1] = (((int16_t)_buffer[2 + _enFifoAccel*6 + _enFifoTemp*2]) << 8) | _buffer[3 + _enFifoAccel*6 + _enFifoTemp*2];
-      rawMeas[2] = (((int16_t)_buffer[4 + _enFifoAccel*6 + _enFifoTemp*2]) << 8) | _buffer[5 + _enFifoAccel*6 + _enFifoTemp*2];
+      rawMeas[0] = (((int16_t)_buffer[1 + 0 + _enFifoAccel*6]) << 8) | _buffer[1 + 1 + _enFifoAccel*6];
+      rawMeas[1] = (((int16_t)_buffer[1 + 2 + _enFifoAccel*6]) << 8) | _buffer[1 + 3 + _enFifoAccel*6];
+      rawMeas[2] = (((int16_t)_buffer[1 + 4 + _enFifoAccel*6]) << 8) | _buffer[1 + 5 + _enFifoAccel*6];
       // transform and convert to float values
       _gxFifo[i] = (rawMeas[0] * _gyroScale) - _gyrB[0];
       _gyFifo[i] = (rawMeas[1] * _gyroScale) - _gyrB[1];
       _gzFifo[i] = (rawMeas[2] * _gyroScale) - _gyrB[2];
       _gSize = _fifoSize/_fifoFrameSize;
     }
+    if (_enFifoTemp) { //p sure all packet formats require this
+      // combine into 16 bit values
+      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6])); //this is normally a 1 byte value
+      // transform and convert to float values
+      _tFifo[i] = (static_cast<float>(rawMeas) / TEMP_DATA_REG_SCALE) + TEMP_OFFSET;
+      _tSize = _fifoSize/_fifoFrameSize;
+    }
+
+    // if (_enFifoAccel && _enFifoGyro) { //timestamp
+    //   int16_t rawMeas[3];
+    // }
+    
   }
   return 1;
 }
