@@ -305,9 +305,11 @@ int ICM42688_FIFO::readFifo() {
       _tSize = _fifoSize/_fifoFrameSize;
     }
 
-    // if (_enFifoAccel && _enFifoGyro) { //timestamp
-    //   int16_t rawMeas[3];
-    // }
+    if (_enFifoAccel && _enFifoGyro) { //timestamp
+      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp]) << 8) |
+                           _buffer[1 + 1 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp];
+      
+    }
     
   }
   return 1;
@@ -597,7 +599,7 @@ void ICM42688::reset() {
   writeRegister(UB0_REG_DEVICE_CONFIG, 0x01);
 
   // wait for ICM42688 to come back up
-  delay(1);
+  delay(10);
 }
 
 /* gets the ICM42688 WHO_AM_I register value */
@@ -610,4 +612,10 @@ uint8_t ICM42688::whoAmI() {
   }
   // return the register value
   return _buffer[0];
+}
+
+void ICM42688::kill() {
+    writeRegister(ICM42688reg::UB0_REG_FIFO_CONFIG, 1 << 7);
+    writeRegister(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 1 << 1);
+    reset();
 }
