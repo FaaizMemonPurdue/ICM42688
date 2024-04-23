@@ -39,7 +39,7 @@ int ICM42688::begin() {
 
   // reset the ICM42688
   reset();
-
+  delay(10);
   // check the WHO AM I byte
   if(whoAmI() != WHO_AM_I) {
     return -3;
@@ -264,54 +264,62 @@ int ICM42688_FIFO::readFifo() {
   Serial.println(_fifoFrameSize);
   readRegisters(UB0_REG_FIFO_COUNTH, 2, _buffer); //this _buffer is 15B, too small for most FIFO
   _fifoSize = (((uint16_t) (_buffer[0]&0xFF)) <<8) + (((uint16_t) _buffer[1])); //idk about the 0F instead of FF
-
+  readRegisters(UB0_REG_FIFO_DATA, _fifoSize, big);
+  Serial.print("_fifoSize: ");
+  Serial.println(_fifoSize);
   // read and parse the buffer
-  for (size_t i=0; i < _fifoSize/_fifoFrameSize; i++) {
-    // grab the data from the ICM42688
-    //bro never reset _buffer between using for count and regdata
-    if (readRegisters(UB0_REG_FIFO_DATA, _fifoFrameSize, _buffer) < 0) { //even worse?
-      return -1;
-    }
-    //all fill ins forgot byte for buffer
-    if (_enFifoAccel) {
-      // combine into 16 bit values
-      int16_t rawMeas[3];
-      rawMeas[0] = (((int16_t)_buffer[1 + 0]) << 8) | _buffer[1 + 1]; //check this order
-      rawMeas[1] = (((int16_t)_buffer[1 + 2]) << 8) | _buffer[1 + 3];
-      rawMeas[2] = (((int16_t)_buffer[1 + 4]) << 8) | _buffer[1 + 5];
-      // transform and convert to float values
-      _axFifo[i] = ((rawMeas[0] * _accelScale) - _accB[0]) * _accS[0];
-      _ayFifo[i] = ((rawMeas[1] * _accelScale) - _accB[1]) * _accS[1];
-      _azFifo[i] = ((rawMeas[2] * _accelScale) - _accB[2]) * _accS[2];
-      _aSize = _fifoSize / _fifoFrameSize;
-    }
-    if (_enFifoGyro) {
-      // combine into 16 bit values
-      int16_t rawMeas[3];
-      rawMeas[0] = (((int16_t)_buffer[1 + 0 + _enFifoAccel*6]) << 8) | _buffer[1 + 1 + _enFifoAccel*6];
-      rawMeas[1] = (((int16_t)_buffer[1 + 2 + _enFifoAccel*6]) << 8) | _buffer[1 + 3 + _enFifoAccel*6];
-      rawMeas[2] = (((int16_t)_buffer[1 + 4 + _enFifoAccel*6]) << 8) | _buffer[1 + 5 + _enFifoAccel*6];
-      // transform and convert to float values
-      _gxFifo[i] = (rawMeas[0] * _gyroScale) - _gyrB[0];
-      _gyFifo[i] = (rawMeas[1] * _gyroScale) - _gyrB[1];
-      _gzFifo[i] = (rawMeas[2] * _gyroScale) - _gyrB[2];
-      _gSize = _fifoSize/_fifoFrameSize;
-    }
-    if (_enFifoTemp) { //p sure all packet formats require this
-      // combine into 16 bit values
-      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6])); //this is normally a 1 byte value
-      // transform and convert to float values
-      _tFifo[i] = (static_cast<float>(rawMeas) / TEMP_DATA_REG_SCALE) + TEMP_OFFSET;
-      _tSize = _fifoSize/_fifoFrameSize;
-    }
-
-    if (_enFifoAccel && _enFifoGyro) { //timestamp
-      int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp]) << 8) |
-                           _buffer[1 + 1 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp];
-      
-    }
+  
+  for (size_t i=0; i < _fifoSize; i += _fifoFrameSize) {
     
   }
+
+
+  // for (size_t i=0; i < _fifoSize/_fifoFrameSize; i++) {
+  //   // grab the data from the ICM42688
+  //   //bro never reset _buffer between using for count and regdata
+  //   if (readRegisters(UB0_REG_FIFO_DATA, _fifoFrameSize, _buffer) < 0) { //even worse?
+  //     return -1;
+  //   }
+  //   //all fill ins forgot byte for buffer
+  //   if (_enFifoAccel) {
+  //     // combine into 16 bit values
+  //     int16_t rawMeas[3];
+  //     rawMeas[0] = (((int16_t)_buffer[1 + 0]) << 8) | _buffer[1 + 1]; //check this order
+  //     rawMeas[1] = (((int16_t)_buffer[1 + 2]) << 8) | _buffer[1 + 3];
+  //     rawMeas[2] = (((int16_t)_buffer[1 + 4]) << 8) | _buffer[1 + 5];
+  //     // transform and convert to float values
+  //     _axFifo[i] = ((rawMeas[0] * _accelScale) - _accB[0]) * _accS[0];
+  //     _ayFifo[i] = ((rawMeas[1] * _accelScale) - _accB[1]) * _accS[1];
+  //     _azFifo[i] = ((rawMeas[2] * _accelScale) - _accB[2]) * _accS[2];
+  //     _aSize = _fifoSize / _fifoFrameSize;
+  //   }
+  //   if (_enFifoGyro) {
+  //     // combine into 16 bit values
+  //     int16_t rawMeas[3];
+  //     rawMeas[0] = (((int16_t)_buffer[1 + 0 + _enFifoAccel*6]) << 8) | _buffer[1 + 1 + _enFifoAccel*6];
+  //     rawMeas[1] = (((int16_t)_buffer[1 + 2 + _enFifoAccel*6]) << 8) | _buffer[1 + 3 + _enFifoAccel*6];
+  //     rawMeas[2] = (((int16_t)_buffer[1 + 4 + _enFifoAccel*6]) << 8) | _buffer[1 + 5 + _enFifoAccel*6];
+  //     // transform and convert to float values
+  //     _gxFifo[i] = (rawMeas[0] * _gyroScale) - _gyrB[0];
+  //     _gyFifo[i] = (rawMeas[1] * _gyroScale) - _gyrB[1];
+  //     _gzFifo[i] = (rawMeas[2] * _gyroScale) - _gyrB[2];
+  //     _gSize = _fifoSize/_fifoFrameSize;
+  //   }
+  //   if (_enFifoTemp) { //p sure all packet formats require this
+  //     // combine into 16 bit values
+  //     int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6])); //this is normally a 1 byte value
+  //     // transform and convert to float values
+  //     _tFifo[i] = (static_cast<float>(rawMeas) / TEMP_DATA_REG_SCALE) + TEMP_OFFSET;
+  //     _tSize = _fifoSize/_fifoFrameSize;
+  //   }
+
+  //   if (_enFifoAccel && _enFifoGyro) { //timestamp
+  //     int16_t rawMeas = (((int16_t)_buffer[1 + 0 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp]) << 8) |
+  //                          _buffer[1 + 1 + _enFifoGyro*6 + _enFifoAccel*6 + _enFifoTemp];
+  //     _timeFifo[i] = rawMeas;
+  //   }
+    
+  // }
   return 1;
 }
 
@@ -617,5 +625,5 @@ uint8_t ICM42688::whoAmI() {
 void ICM42688::kill() {
     writeRegister(ICM42688reg::UB0_REG_FIFO_CONFIG, 1 << 7);
     writeRegister(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 1 << 1);
-    reset();
+    // reset();
 }
